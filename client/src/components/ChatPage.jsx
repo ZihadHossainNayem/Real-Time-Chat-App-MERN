@@ -1,4 +1,18 @@
+import { useEffect, useState } from "react";
+
 export const ChatPage = () => {
+  const [ws, setWs] = useState(null);
+
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:5559");
+    setWs(ws);
+    ws.addEventListener("message", handleMsg);
+  }, []);
+
+  const handleMsg = (e) => {
+    console.log("new message", e);
+  };
+
   return (
     <div className=" h-screen grid grid-cols-10">
       {/* left grid */}

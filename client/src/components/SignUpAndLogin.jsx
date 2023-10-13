@@ -47,7 +47,7 @@ export const SignUpAndLogin = () => {
             {isLoginOrSignUp === "signup" ? "Sign Up" : "Login"}
           </button>
           <div>
-            <p className="text-center mt-2">
+            <div className="text-center mt-2">
               {isLoginOrSignUp === "signup" && (
                 <div>
                   Already have an account?
@@ -72,7 +72,7 @@ export const SignUpAndLogin = () => {
                   </button>
                 </div>
               )}
-            </p>
+            </div>
           </div>
         </form>
       </div>
