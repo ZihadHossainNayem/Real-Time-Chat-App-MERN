@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 export const ChatPage = () => {
   const [ws, setWs] = useState(null);
+  const [onlineClient, setOnlineClient] = useState([]);
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:5559");
@@ -9,21 +10,42 @@ export const ChatPage = () => {
     ws.addEventListener("message", handleMsg);
   }, []);
 
+  /* function for showing online clients */
+  const showOnlineClient = (clientArray) => {
+    const onlineClient = {};
+    clientArray.forEach(({ username, userId }) => {
+      onlineClient[userId] = username;
+    });
+    setOnlineClient(onlineClient);
+  };
+
   const handleMsg = (e) => {
-    console.log("new message", e);
+    const messageData = JSON.parse(e.data);
+    if ("online" in messageData) {
+      showOnlineClient(messageData.online);
+    }
   };
 
   return (
     <div className=" h-screen grid grid-cols-10">
       {/* left grid */}
-      <div className="col-span-3 bg-purple-50 h-screen p-2 md:p-8">
-        <h1 className="md:text-xl text-base md:font-bold font-semibold">
-          Chats
-        </h1>
+      <div className="col-span-3 bg-purple-50 h-screen p-3 md:p-8">
+        <h1 className="md:text-2xl text-lg md:font-bold font-bold">Chats</h1>
+        {/* online client list */}
+        <div className="my-4">
+          {Object.keys(onlineClient).map((userId) => (
+            <div
+              key={userId}
+              className="md:text-lg font-medium border-b border-purple-100 py-2"
+            >
+              {onlineClient[userId]}
+            </div>
+          ))}
+        </div>
       </div>
       {/* right grid */}
-      <div className="col-span-7 bg-purple-100 p-2 md:p-8 flex flex-col">
-        <h1 className="md:text-xl text-base md:font-bold font-semibold flex-grow">
+      <div className="col-span-7 bg-purple-100 p-3 md:p-8 flex flex-col">
+        <h1 className="md:text-2xl text-lg md:font-bold font-bold flex-grow">
           Chat person name
         </h1>
         <div className="flex gap-2 mb-2">

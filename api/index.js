@@ -117,4 +117,15 @@ wss.on("connection", (connection, req) => {
       }
     }
   }
+  /* online client list */
+  [...wss.clients].forEach((client) => {
+    client.send(
+      JSON.stringify({
+        online: [...wss.clients].map((client) => ({
+          userId: client.userId,
+          username: client.username,
+        })),
+      })
+    );
+  });
 });
