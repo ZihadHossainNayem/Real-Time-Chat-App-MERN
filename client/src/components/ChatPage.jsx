@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ProfileImageGen } from "./ProfileImageGen";
+import { UserContext } from "../context/UserContext";
 
 export const ChatPage = () => {
+  /* state for web socket and online client showcase */
   const [ws, setWs] = useState(null);
   const [onlineClient, setOnlineClient] = useState([]);
+  /* state for chat selection */
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:5559");
@@ -27,32 +31,58 @@ export const ChatPage = () => {
     }
   };
 
+  /* chat selection */
+  const selectedChat = (userId) => {
+    setSelectedUser(userId);
+  };
+
+  /* getting own username to exclude it from online client showcase */
+  const { id } = useContext(UserContext);
+  const onlineClientExcludeOwnUsername = { ...onlineClient };
+  delete onlineClientExcludeOwnUsername[id];
+
   return (
     <div className=" h-screen grid grid-cols-10">
       {/* left grid */}
-      <div className="col-span-3 bg-purple-50 h-screen p-3 md:p-8">
-        <h1 className="md:text-2xl text-lg md:font-bold font-bold">Chats</h1>
+      <div className="col-span-3 bg-purple-50 h-screen ">
+        <h1 className="md:text-2xl text-lg md:font-bold font-bold px-3 md:px-6 pt-3 md:pt-8">
+          Chats
+        </h1>
         {/* online client list */}
         <div className="my-4">
-          {Object.keys(onlineClient).map((userId) => (
+          {Object.keys(onlineClientExcludeOwnUsername).map((userId) => (
             <div
               key={userId}
-              className="md:text-lg font-medium border-b border-purple-100 py-2 flex items-center gap-2 cursor-pointer"
+              className={
+                "md:text-lg font-medium border-b border-purple-100 flex items-center gap-2 cursor-pointer " +
+                (userId === selectedUser ? "bg-purple-100" : "")
+              }
+              onClick={() => selectedChat(userId)}
             >
-              <ProfileImageGen
-                username={onlineClient[userId]}
-                userId={userId}
-              />
-
-              <span>{onlineClient[userId]}</span>
+              {userId === selectedUser && (
+                <div className="w-1 bg-purple-400 h-16"></div>
+              )}
+              <div className="flex items-center gap-2 px-3 md:px-6 py-4 ">
+                <ProfileImageGen
+                  username={onlineClient[userId]}
+                  userId={userId}
+                />
+                <span>{onlineClient[userId]}</span>
+              </div>
             </div>
           ))}
         </div>
       </div>
       {/* right grid */}
-      <div className="col-span-7 bg-purple-100 p-3 md:p-8 flex flex-col">
+      <div className="col-span-7 bg-purple-100  px-3 md:px-6 pt-3 md:pt-8 flex flex-col">
         <h1 className="md:text-2xl text-lg md:font-bold font-bold flex-grow">
-          Chat person name
+          {!selectedUser && (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-gray-500">
+                Select User to Start the Conversation
+              </p>
+            </div>
+          )}
         </h1>
         <div className="flex gap-2 mb-2">
           <input
