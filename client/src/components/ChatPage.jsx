@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ProfileImageGen } from "./ProfileImageGen";
 
 export const ChatPage = () => {
   const [ws, setWs] = useState(null);
@@ -36,9 +37,14 @@ export const ChatPage = () => {
           {Object.keys(onlineClient).map((userId) => (
             <div
               key={userId}
-              className="md:text-lg font-medium border-b border-purple-100 py-2"
+              className="md:text-lg font-medium border-b border-purple-100 py-2 flex items-center gap-2 cursor-pointer"
             >
-              {onlineClient[userId]}
+              <ProfileImageGen
+                username={onlineClient[userId]}
+                userId={userId}
+              />
+
+              <span>{onlineClient[userId]}</span>
             </div>
           ))}
         </div>
