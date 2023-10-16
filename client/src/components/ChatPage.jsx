@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { ProfileImageGen } from "./ProfileImageGen";
 import { UserContext } from "../context/UserContext";
+import { uniqBy } from "lodash";
 
 export const ChatPage = () => {
   /* state for web socket and online client showcase */
@@ -10,6 +11,8 @@ export const ChatPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   /* state for new message */
   const [newMessage, setNewMessage] = useState("");
+  /* state for sent messages showcase */
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:5559");
@@ -28,9 +31,28 @@ export const ChatPage = () => {
 
   const handleMsg = (e) => {
     const messageData = JSON.parse(e.data);
+    console.log({ messageData });
     if ("online" in messageData) {
       showOnlineClient(messageData.online);
+    } else if ("text" in messageData) {
+      setMessages((prev) => [...prev, { ...messageData }]);
     }
+  };
+
+  /* function to send new message */
+  const sendMessage = (e) => {
+    e.preventDefault();
+    ws.send(
+      JSON.stringify({
+        recipient: selectedUser,
+        text: newMessage,
+      })
+    );
+    setNewMessage("");
+    setMessages((prev) => [
+      ...prev,
+      { text: newMessage, sender: id, recipient: selectedUser, id: Date.now() },
+    ]);
   };
 
   /* chat selection */
@@ -43,18 +65,7 @@ export const ChatPage = () => {
   const onlineClientExcludeOwnUsername = { ...onlineClient };
   delete onlineClientExcludeOwnUsername[id];
 
-  /* function to send new message */
-  const sendMessage = (e) => {
-    e.preventDefault();
-    ws.send(
-      JSON.stringify({
-        message: {
-          recipient: selectedUser,
-          text: newMessage,
-        },
-      })
-    );
-  };
+  const messagesNotDuplicate = uniqBy(messages, "id");
 
   return (
     <div className=" h-screen grid grid-cols-10">
@@ -96,6 +107,28 @@ export const ChatPage = () => {
               <p className="text-gray-500">
                 Select User to Start the Conversation
               </p>
+            </div>
+          )}
+          {!!selectedUser && (
+            <div>
+              {messagesNotDuplicate.map((message) => (
+                <div
+                  className={message.sender === id ? "text-right" : "text-left"}
+                >
+                  <div
+                    className={
+                      "inline-block text-left rounded-lg py-2 px-4 my-2 text-base font-medium " +
+                      (message.sender === id
+                        ? "bg-purple-300 "
+                        : "bg-white text-gray-800 ")
+                    }
+                  >
+                    sender:{message.sender} <br />
+                    my id:{id} <br />
+                    {message.text}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

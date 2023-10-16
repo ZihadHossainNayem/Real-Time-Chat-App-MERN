@@ -7,6 +7,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const ws = require("ws");
+const Message = require("./models/Message");
 
 dotenv.config();
 mongoose.connect(process.env.MONGODB_URL);
@@ -117,6 +118,34 @@ wss.on("connection", (connection, req) => {
       }
     }
   }
+
+  /* sending message to user */
+  connection.on("message", async (message) => {
+    messageData = JSON.parse(message.toString());
+    const { recipient, text } = messageData;
+    if (recipient && text) {
+      /* message to database */
+      const messageDocument = await Message.create({
+        sender: connection.userId,
+        recipient,
+        text,
+      });
+      /* not find, but filter, because of same user login from different device */
+      [...wss.clients]
+        .filter((c) => c.userId === recipient)
+        .forEach((c) =>
+          c.send(
+            JSON.stringify({
+              text,
+              sender: connection.userId,
+              recipient,
+              id: messageDocument._id,
+            })
+          )
+        );
+    }
+  });
+
   /* online client list */
   [...wss.clients].forEach((client) => {
     client.send(
