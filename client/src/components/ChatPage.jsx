@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { ProfileImageGen } from "./ProfileImageGen";
 import { UserContext } from "../context/UserContext";
 import { uniqBy } from "lodash";
+import axios from "axios";
 
 export const ChatPage = () => {
   /* state for web socket and online client showcase */
@@ -65,6 +66,13 @@ export const ChatPage = () => {
       div.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  /*  fetching chat history*/
+  useEffect(() => {
+    if (selectedUser) {
+      axios.get("/messages/" + selectedUser);
+    }
+  }, [selectedUser]);
 
   /* chat selection */
   const selectedChat = (userId) => {

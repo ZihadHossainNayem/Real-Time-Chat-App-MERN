@@ -30,6 +30,33 @@ app.get("/test", (req, res) => {
   res.json("test ok");
 });
 
+/* get user data from request */
+const getUserDataFromRequest = async (req) => {
+  return new Promise((resolve, reject) => {
+    const token = req.cookies?.token;
+    if (token) {
+      jwt.verify(token, jwtString, {}, (err, userData) => {
+        if (err) throw err;
+        resolve(userData);
+      });
+    } else {
+      reject("no token");
+    }
+  });
+};
+
+/* end point for retrieving chat history */
+app.get("/messages/:userId", async (req, res) => {
+  const { userId } = req.params;
+  const userData = await getUserDataFromRequest(req);
+  const ownUserId = userData.userId;
+  const messageHistory = await Message.find({
+    sender: { $in: [userId, ownUserId] },
+    recipient: { $in: [userId, ownUserId] },
+  }).sort({ createdAt: 1 });
+  res.json(messageHistory);
+});
+
 /* profile end point */
 app.get("/profile", (req, res) => {
   const token = req.cookies?.token;
