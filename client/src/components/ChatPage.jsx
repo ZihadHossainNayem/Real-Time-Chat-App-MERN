@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { ProfileImageGen } from "./ProfileImageGen";
 import { UserContext } from "../context/UserContext";
 import { uniqBy } from "lodash";
@@ -13,6 +13,9 @@ export const ChatPage = () => {
   const [newMessage, setNewMessage] = useState("");
   /* state for sent messages showcase */
   const [messages, setMessages] = useState([]);
+
+  /* reference for sending the user to the bottom of the chat after sending message */
+  const chatPositionRef = useRef();
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:5559");
@@ -54,6 +57,14 @@ export const ChatPage = () => {
       { text: newMessage, sender: id, recipient: selectedUser, id: Date.now() },
     ]);
   };
+
+  /* for chat auto scroll to latest */
+  useEffect(() => {
+    const div = chatPositionRef.current;
+    if (div) {
+      div.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   /* chat selection */
   const selectedChat = (userId) => {
@@ -110,25 +121,31 @@ export const ChatPage = () => {
             </div>
           )}
           {!!selectedUser && (
-            <div>
-              {messagesNotDuplicate.map((message) => (
-                <div
-                  className={message.sender === id ? "text-right" : "text-left"}
-                >
+            <div className="h-full relative">
+              <div className="absolute top-0 right-0 left-0 bottom-2 overflow-y-scroll">
+                {messagesNotDuplicate.map((message, index) => (
                   <div
+                    key={index}
                     className={
-                      "inline-block text-left rounded-lg py-2 px-4 my-2 text-base font-medium " +
-                      (message.sender === id
-                        ? "bg-purple-300 "
-                        : "bg-white text-gray-800 ")
+                      message.sender === id ? "text-right" : "text-left"
                     }
                   >
-                    sender:{message.sender} <br />
-                    my id:{id} <br />
-                    {message.text}
+                    <div
+                      className={
+                        "inline-block text-left rounded-lg py-2 px-4 my-2 text-base font-medium " +
+                        (message.sender === id
+                          ? "bg-purple-300 "
+                          : "bg-white text-gray-800 ")
+                      }
+                    >
+                      sender:{message.sender} <br />
+                      my id:{id} <br />
+                      {message.text}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+                <div ref={chatPositionRef}></div>
+              </div>
             </div>
           )}
         </div>
