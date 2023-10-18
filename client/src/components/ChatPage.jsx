@@ -63,7 +63,12 @@ export const ChatPage = () => {
     setNewMessage("");
     setMessages((prev) => [
       ...prev,
-      { text: newMessage, sender: id, recipient: selectedUser, id: Date.now() },
+      {
+        text: newMessage,
+        sender: id,
+        recipient: selectedUser,
+        _id: Date.now(),
+      },
     ]);
   };
 
@@ -78,7 +83,9 @@ export const ChatPage = () => {
   /*  fetching chat history*/
   useEffect(() => {
     if (selectedUser) {
-      axios.get("/messages/" + selectedUser);
+      axios.get("/messages/" + selectedUser).then((res) => {
+        setMessages(res.data);
+      });
     }
   }, [selectedUser]);
 
@@ -92,12 +99,12 @@ export const ChatPage = () => {
   const onlineClientExcludeOwnUsername = { ...onlineClient };
   delete onlineClientExcludeOwnUsername[id];
 
-  const messagesNotDuplicate = uniqBy(messages, "id");
+  const messagesNotDuplicate = uniqBy(messages, "_id");
 
   return (
     <div className=" h-screen grid grid-cols-10">
       {/* left grid */}
-      <div className="col-span-3 bg-purple-50 h-screen ">
+      <div className="col-span-3 bg-purple-50 h-screen border-r border-purple-200">
         <h1 className="md:text-2xl text-lg md:font-bold font-bold px-3 md:px-6 pt-3 md:pt-8">
           Chats
         </h1>
@@ -139,23 +146,21 @@ export const ChatPage = () => {
           {!!selectedUser && (
             <div className="h-full relative">
               <div className="absolute top-0 right-0 left-0 bottom-2 overflow-y-scroll">
-                {messagesNotDuplicate.map((message, index) => (
+                {messagesNotDuplicate.map((message) => (
                   <div
-                    key={index}
+                    key={message._id}
                     className={
                       message.sender === id ? "text-right" : "text-left"
                     }
                   >
                     <div
                       className={
-                        "inline-block text-left rounded-lg py-2 px-4 my-2 text-base font-medium " +
+                        "inline-block text-left rounded-lg py-2 px-4 my-2 mx-4 text-base font-medium " +
                         (message.sender === id
                           ? "bg-purple-300 "
                           : "bg-white text-gray-800 ")
                       }
                     >
-                      sender:{message.sender} <br />
-                      my id:{id} <br />
                       {message.text}
                     </div>
                   </div>
