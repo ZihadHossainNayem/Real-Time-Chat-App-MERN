@@ -19,10 +19,18 @@ export const ChatPage = () => {
   const chatPositionRef = useRef();
 
   useEffect(() => {
+    connectToWebSocket();
+  }, []);
+
+  /* function for connecting web socket */
+  const connectToWebSocket = () => {
     const ws = new WebSocket("ws://localhost:5559");
     setWs(ws);
     ws.addEventListener("message", handleMsg);
-  }, []);
+    ws.addEventListener("close", () => {
+      connectToWebSocket();
+    });
+  };
 
   /* function for showing online clients */
   const showOnlineClient = (clientArray) => {
