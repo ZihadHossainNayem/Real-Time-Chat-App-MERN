@@ -3,17 +3,20 @@ import { ProfileImageGen } from "./ProfileImageGen";
 import { UserContext } from "../context/UserContext";
 import { uniqBy } from "lodash";
 import axios from "axios";
+import { Users } from "./Users";
 
 export const ChatPage = () => {
   /* state for web socket and online client showcase */
   const [ws, setWs] = useState(null);
-  const [onlineClient, setOnlineClient] = useState([]);
+  const [onlineClient, setOnlineClient] = useState({});
   /* state for chat selection */
   const [selectedUser, setSelectedUser] = useState(null);
   /* state for new message */
   const [newMessage, setNewMessage] = useState("");
   /* state for sent messages showcase */
   const [messages, setMessages] = useState([]);
+  /* state for offline users */
+  const [offlineClient, setOfflineClient] = useState({});
 
   /* reference for sending the user to the bottom of the chat after sending message */
   const chatPositionRef = useRef();
@@ -80,6 +83,22 @@ export const ChatPage = () => {
     }
   }, [messages]);
 
+  /*  offline users */
+  useEffect(() => {
+    axios.get("/people").then((res) => {
+      /* exclude own id, and online users */
+      const offlineUsersArray = res.data
+        .filter((user) => user._id !== id)
+        .filter((user) => !Object.keys(onlineClient).includes(user._id));
+
+      const offlineUsers = {};
+      offlineUsersArray.forEach((users) => {
+        offlineUsers[users._id] = users;
+      });
+      setOfflineClient(offlineUsers);
+    });
+  }, [onlineClient]);
+
   /*  fetching chat history*/
   useEffect(() => {
     if (selectedUser) {
@@ -88,11 +107,6 @@ export const ChatPage = () => {
       });
     }
   }, [selectedUser]);
-
-  /* chat selection */
-  const selectedChat = (userId) => {
-    setSelectedUser(userId);
-  };
 
   /* getting own username to exclude it from online client showcase */
   const { id } = useContext(UserContext);
@@ -111,25 +125,25 @@ export const ChatPage = () => {
         {/* online client list */}
         <div className="my-4">
           {Object.keys(onlineClientExcludeOwnUsername).map((userId) => (
-            <div
+            <Users
               key={userId}
-              className={
-                "md:text-lg font-medium border-b border-purple-100 flex items-center gap-2 cursor-pointer " +
-                (userId === selectedUser ? "bg-purple-100" : "")
-              }
-              onClick={() => selectedChat(userId)}
-            >
-              {userId === selectedUser && (
-                <div className="w-1 bg-purple-400 h-16"></div>
-              )}
-              <div className="flex items-center gap-2 px-3 md:px-6 py-4 ">
-                <ProfileImageGen
-                  username={onlineClient[userId]}
-                  userId={userId}
-                />
-                <span>{onlineClient[userId]}</span>
-              </div>
-            </div>
+              id={userId}
+              online={true}
+              username={onlineClientExcludeOwnUsername[userId]}
+              onClick={() => setSelectedUser(userId)}
+              selected={selectedUser}
+            />
+          ))}
+          {/* offline client*/}
+          {Object.keys(offlineClient).map((userId) => (
+            <Users
+              key={userId}
+              id={userId}
+              online={false}
+              username={offlineClient[userId].username}
+              onClick={() => setSelectedUser(userId)}
+              selected={selectedUser}
+            />
           ))}
         </div>
       </div>

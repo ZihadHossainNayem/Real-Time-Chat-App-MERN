@@ -57,6 +57,12 @@ app.get("/messages/:userId", async (req, res) => {
   res.json(messageHistory);
 });
 
+/* end point for client list offline included */
+app.get("/people", async (req, res) => {
+  const users = await User.find({}, { _id: 1, username: 1 });
+  res.json(users);
+});
+
 /* profile end point */
 app.get("/profile", (req, res) => {
   const token = req.cookies?.token;
@@ -126,6 +132,34 @@ const server = app.listen(5559);
 /* web socket */
 const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
+  const notifyOnlineClients = () => {
+    [...wss.clients].forEach((client) => {
+      client.send(
+        JSON.stringify({
+          online: [...wss.clients].map((client) => ({
+            userId: client.userId,
+            username: client.username,
+          })),
+        })
+      );
+    });
+  };
+  connection.isAlive = true;
+
+  /* ping connection every 5 seconds for profile online indication */
+  connection.timer = setInterval(() => {
+    connection.ping();
+    connection.deathTimer = setTimeout(() => {
+      connection.isAlive = false;
+      connection.terminate();
+      notifyOnlineClients();
+    }, 1000);
+  }, 5000);
+
+  connection.on("pong", () => {
+    clearTimeout(connection.deathTimer);
+  });
+
   /* getting connected users token from cookie */
   const cookies = req.headers.cookie;
   if (cookies) {
@@ -174,14 +208,5 @@ wss.on("connection", (connection, req) => {
   });
 
   /* online client list */
-  [...wss.clients].forEach((client) => {
-    client.send(
-      JSON.stringify({
-        online: [...wss.clients].map((client) => ({
-          userId: client.userId,
-          username: client.username,
-        })),
-      })
-    );
-  });
+  notifyOnlineClients();
 });
