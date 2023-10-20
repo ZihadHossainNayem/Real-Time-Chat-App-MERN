@@ -18,6 +18,8 @@ export const ChatPage = () => {
   /* state for offline users */
   const [offlineClient, setOfflineClient] = useState({});
 
+  const { id, setId, uname, setUname } = useContext(UserContext);
+
   /* reference for sending the user to the bottom of the chat after sending message */
   const chatPositionRef = useRef();
 
@@ -75,6 +77,14 @@ export const ChatPage = () => {
     ]);
   };
 
+  /* function for log out by resetting cookie*/
+  const logout = () => {
+    axios.post("/logout").then(() => {
+      setId(null);
+      setUname(null);
+    });
+  };
+
   /* for chat auto scroll to latest */
   useEffect(() => {
     const div = chatPositionRef.current;
@@ -109,7 +119,7 @@ export const ChatPage = () => {
   }, [selectedUser]);
 
   /* getting own username to exclude it from online client showcase */
-  const { id } = useContext(UserContext);
+
   const onlineClientExcludeOwnUsername = { ...onlineClient };
   delete onlineClientExcludeOwnUsername[id];
 
@@ -118,12 +128,12 @@ export const ChatPage = () => {
   return (
     <div className=" h-screen grid grid-cols-10">
       {/* left grid */}
-      <div className="col-span-3 bg-purple-50 h-screen border-r border-purple-200">
+      <div className="flex flex-col col-span-3 bg-purple-50 h-screen border-r border-purple-200">
         <h1 className="md:text-2xl text-lg md:font-bold font-bold px-3 md:px-6 pt-3 md:pt-8">
           Chats
         </h1>
         {/* online client list */}
-        <div className="my-4">
+        <div className="my-4 flex-grow">
           {Object.keys(onlineClientExcludeOwnUsername).map((userId) => (
             <Users
               key={userId}
@@ -145,6 +155,32 @@ export const ChatPage = () => {
               selected={selectedUser}
             />
           ))}
+        </div>
+        {/* log out */}
+        <div className="md:text-xl text-base font-semibold my-6 flex items-center justify-between md:mx-6 mx-2">
+          <span className="mr-4 text-gray-700 flex items-center gap-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-7 h-7"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            {uname}
+          </span>
+          <button
+            className="text-gray-700 bg-purple-200 p-2 rounded border border-purple-300"
+            onClick={logout}
+          >
+            Log out
+          </button>
         </div>
       </div>
       {/* right grid */}

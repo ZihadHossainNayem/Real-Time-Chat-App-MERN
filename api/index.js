@@ -97,6 +97,11 @@ app.post("/login", async (req, res) => {
   }
 });
 
+/* log out end point */
+app.post("/logout", (req, res) => {
+  res.cookie("token", "", { sameSite: "none", secure: true }).json("ok");
+});
+
 /* sign up end point */
 app.post("/signup", async (req, res) => {
   const { username, password } = req.body;
