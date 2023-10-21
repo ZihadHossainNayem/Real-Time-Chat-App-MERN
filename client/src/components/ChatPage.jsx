@@ -52,9 +52,7 @@ export const ChatPage = () => {
     if ("online" in messageData) {
       showOnlineClient(messageData.online);
     } else if ("text" in messageData) {
-      if (messageData.sender === selectedUser) {
-        setMessages((prev) => [...prev, { ...messageData }]);
-      }
+      setMessages((prev) => [...prev, { ...messageData }]);
     }
   };
 
@@ -229,7 +227,7 @@ export const ChatPage = () => {
                   >
                     <div
                       className={
-                        "inline-block text-left rounded-lg py-2 px-4 my-2 mx-4 md:text-base text-sm font-medium " +
+                        "inline-block text-left rounded-lg py-2 px-4 my-2 mx-4 text-base font-medium " +
                         (message.sender === id
                           ? "bg-purple-300 "
                           : "bg-white text-gray-800 ")
