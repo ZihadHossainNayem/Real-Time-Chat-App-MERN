@@ -52,37 +52,61 @@ export const ChatPage = () => {
     if ("online" in messageData) {
       showOnlineClient(messageData.online);
     } else if ("text" in messageData) {
-      setMessages((prev) => [...prev, { ...messageData }]);
+      if (messageData.sender === selectedUser) {
+        setMessages((prev) => [...prev, { ...messageData }]);
+      }
     }
   };
 
   /* function to send new message */
-  const sendMessage = (e) => {
-    e.preventDefault();
+  const sendMessage = (e, file = null) => {
+    /* check if there is files included */
+    if (e) e.preventDefault();
     ws.send(
       JSON.stringify({
         recipient: selectedUser,
         text: newMessage,
+        file,
       })
     );
-    setNewMessage("");
-    setMessages((prev) => [
-      ...prev,
-      {
-        text: newMessage,
-        sender: id,
-        recipient: selectedUser,
-        _id: Date.now(),
-      },
-    ]);
+
+    if (file) {
+      axios.get("/messages/" + selectedUser).then((res) => {
+        setMessages(res.data);
+      });
+    } else {
+      setNewMessage("");
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: newMessage,
+          sender: id,
+          recipient: selectedUser,
+          _id: Date.now(),
+        },
+      ]);
+    }
   };
 
   /* function for log out by resetting cookie*/
   const logout = () => {
     axios.post("/logout").then(() => {
+      setWs(null);
       setId(null);
       setUname(null);
     });
+  };
+
+  /* function for file attachment */
+  const fileAttachment = (e) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(e.target.files[0]);
+    reader.onload = () => {
+      sendMessage(null, {
+        data: reader.result,
+        name: e.target.files[0].name,
+      });
+    };
   };
 
   /* for chat auto scroll to latest */
@@ -157,26 +181,26 @@ export const ChatPage = () => {
           ))}
         </div>
         {/* log out */}
-        <div className="md:text-xl text-base font-semibold my-6 flex items-center justify-between md:mx-6 mx-2">
-          <span className="mr-4 text-gray-700 flex items-center gap-1">
+        <div className="md:text-xl text-base font-semibold my-2 flex flex-col md:flex-row space-y-2 md:space-y-0 items-center justify-between md:mx-6 mx-2">
+          <span className="mr-4 text-gray-700 flex items-center gap-1 cursor-pointer">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
-              stroke-width="1.5"
+              strokeWidth="1.5"
               stroke="currentColor"
-              class="w-7 h-7"
+              className="w-7 h-7"
             >
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            {uname}
+            <span className="text-lg">{uname}</span>
           </span>
           <button
-            className="text-gray-700 bg-purple-200 p-2 rounded border border-purple-300"
+            className="text-gray-700 bg-purple-200 px-2 py-[6px] rounded border border-purple-300 text-lg"
             onClick={logout}
           >
             Log out
@@ -184,7 +208,7 @@ export const ChatPage = () => {
         </div>
       </div>
       {/* right grid */}
-      <div className="col-span-7 bg-purple-100  px-3 md:px-6 pt-3 md:pt-8 flex flex-col">
+      <div className="col-span-7 bg-purple-100  px-2 pt-3 md:pt-8 flex flex-col">
         <div className="md:text-2xl text-lg md:font-bold font-bold flex-grow">
           {!selectedUser && (
             <div className="flex items-center justify-center h-full">
@@ -205,13 +229,42 @@ export const ChatPage = () => {
                   >
                     <div
                       className={
-                        "inline-block text-left rounded-lg py-2 px-4 my-2 mx-4 text-base font-medium " +
+                        "inline-block text-left rounded-lg py-2 px-4 my-2 mx-4 md:text-base text-sm font-medium " +
                         (message.sender === id
                           ? "bg-purple-300 "
                           : "bg-white text-gray-800 ")
                       }
                     >
                       {message.text}
+                      {message.file && (
+                        <div className="flex items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="w-6 h-6"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+                            />
+                          </svg>
+
+                          <a
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline"
+                            href={
+                              axios.defaults.baseURL + "/upload/" + message.file
+                            }
+                          >
+                            {message.file}
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -221,26 +274,48 @@ export const ChatPage = () => {
           )}
         </div>
         {!!selectedUser && (
-          <form className="flex gap-2 mb-2" onSubmit={sendMessage}>
+          <form className="flex gap-1 mb-2" onSubmit={sendMessage}>
+            {/* attachment button */}
+            <label className="bg-purple-300 p-2 rounded cursor-pointer">
+              <input type="file" className="hidden" onChange={fileAttachment} />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </label>
+            {/* message input field */}
             <input
               type="text"
               placeholder="type a message..."
-              className="border border-purple-200 p-2 flex-grow focus:outline-purple-300 "
+              className="border border-purple-200 flex-grow p-2 rounded focus:outline-purple-300 min-w-[30px]"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
             />
-            <button
-              type="submit"
-              className="bg-purple-200 py-2 px-3 border border-purple-200"
-            >
+            {/* message send button */}
+            <button type="submit" className="bg-purple-300 p-2 rounded">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                fill="currentColor"
-                viewBox="0 0 16 16"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-6 h-6"
               >
-                <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z" />{" "}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </button>
           </form>

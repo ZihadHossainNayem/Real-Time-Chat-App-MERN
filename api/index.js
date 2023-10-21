@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const ws = require("ws");
 const Message = require("./models/Message");
+const fs = require("fs");
 
 dotenv.config();
 mongoose.connect(process.env.MONGODB_URL);
@@ -15,6 +16,7 @@ const jwtString = process.env.JWT_STRING;
 const bcryptSalt = bcrypt.genSaltSync(10);
 
 const app = express();
+app.use("/upload", express.static(__dirname + "/upload"));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -156,6 +158,7 @@ wss.on("connection", (connection, req) => {
     connection.ping();
     connection.deathTimer = setTimeout(() => {
       connection.isAlive = false;
+      clearInterval(connection.timer);
       connection.terminate();
       notifyOnlineClients();
     }, 1000);
@@ -188,14 +191,27 @@ wss.on("connection", (connection, req) => {
   /* sending message to user */
   connection.on("message", async (message) => {
     messageData = JSON.parse(message.toString());
-    const { recipient, text } = messageData;
-    if (recipient && text) {
+    const { recipient, text, file } = messageData;
+    if (file) {
+      const sections = file.name.split(".");
+      const extension = sections[sections.length - 1];
+      filename = Date.now() + "." + extension;
+      const path = __dirname + "/upload/" + filename;
+      /* decode file here */
+      const bufferData = new Buffer(file.data.split(",")[1], "base64");
+      fs.writeFile(path, bufferData, () => {
+        console.log("file saved:" + path);
+      });
+    }
+    if (recipient && (text || file)) {
       /* message to database */
       const messageDocument = await Message.create({
         sender: connection.userId,
         recipient,
         text,
+        file: file ? filename : null,
       });
+      console.log("created message");
       /* not find, but filter, because of same user login from different device */
       [...wss.clients]
         .filter((c) => c.userId === recipient)
@@ -205,6 +221,7 @@ wss.on("connection", (connection, req) => {
               text,
               sender: connection.userId,
               recipient,
+              file: file ? filename : null,
               _id: messageDocument._id,
             })
           )
